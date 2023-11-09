@@ -6,6 +6,11 @@ from scrapy import signals
 from scrapy.exceptions import NotConfigured
 from selenium.webdriver.support.ui import WebDriverWait
 
+# timeout
+from selenium.common.exceptions import TimeoutException
+from twisted.internet.error import TimeoutError
+
+
 from .http import SeleniumRequest
 from .selenium_utilities import SeleniumUtilities
 
@@ -14,7 +19,8 @@ class SeleniumMiddleware:
     """Scrapy middleware handling the requests using selenium"""
 
     def __init__(self, driver_name, driver_executable_path,
-        browser_executable_path, command_executor, driver_arguments):
+        browser_executable_path, command_executor, driver_arguments,
+        timeout):
         """Initialize the selenium webdriver
 
         Parameters
@@ -29,7 +35,11 @@ class SeleniumMiddleware:
             The path of the executable binary of the browser
         command_executor: str
             Selenium remote server endpoint
+        timeout: int
+            support DOWNLOAD_TIMEOUT
         """
+
+        self.timeout = timeout
 
         webdriver_base_path = f'selenium.webdriver.{driver_name}'
 
@@ -74,6 +84,7 @@ class SeleniumMiddleware:
         browser_executable_path = crawler.settings.get('SELENIUM_BROWSER_EXECUTABLE_PATH')
         command_executor = crawler.settings.get('SELENIUM_COMMAND_EXECUTOR')
         driver_arguments = crawler.settings.get('SELENIUM_DRIVER_ARGUMENTS')
+        timeout = crawler.settings.get('DOWNLOAD_TIMEOUT')
 
         if(driver_name is None):
             raise NotConfigured('SELENIUM_DRIVER_NAME must be set')
@@ -87,7 +98,8 @@ class SeleniumMiddleware:
             driver_executable_path=driver_executable_path,
             browser_executable_path=browser_executable_path,
             command_executor=command_executor,
-            driver_arguments=driver_arguments
+            driver_arguments=driver_arguments,
+            timeout=timeout,
         )
 
         crawler.signals.connect(middleware.spider_closed, signals.spider_closed)
@@ -100,7 +112,22 @@ class SeleniumMiddleware:
         if(not isinstance(request, SeleniumRequest)):
             return None
 
-        self.driver.get(request.url)
+
+        # timeout
+        timeout = request.timeout
+        if timeout is None:
+            timeout = self.timeout
+        if not isinstance(timeout, (int, float)):
+            # default 30s
+            timeout = 30
+        self.driver.set_page_load_timeout(timeout)
+
+        try:
+            self.driver.get(request.url)
+        except TimeoutException as e:
+            raise TimeoutError(e, "scrapy-selenium : request timeout")
+
+
 
         for cookie_name, cookie_value in request.cookies.items():
             self.driver.add_cookie(
