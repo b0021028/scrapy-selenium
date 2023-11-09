@@ -84,7 +84,8 @@ class SeleniumMiddleware:
         browser_executable_path = crawler.settings.get('SELENIUM_BROWSER_EXECUTABLE_PATH')
         command_executor = crawler.settings.get('SELENIUM_COMMAND_EXECUTOR')
         driver_arguments = crawler.settings.get('SELENIUM_DRIVER_ARGUMENTS')
-        timeout = crawler.settings.get('DOWNLOAD_TIMEOUT')
+
+        timeout = crawler.settings.getfloat('DOWNLOAD_TIMEOUT')
 
         if(driver_name is None):
             raise NotConfigured('SELENIUM_DRIVER_NAME must be set')
