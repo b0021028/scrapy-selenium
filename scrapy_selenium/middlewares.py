@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # timeout
 from selenium.common.exceptions import TimeoutException
 from twisted.internet.error import TimeoutError
+from scrapy.exceptions import IgnoreRequest
 
 
 from .http import SeleniumRequest
@@ -126,7 +127,7 @@ class SeleniumMiddleware:
         try:
             self.driver.get(request.url)
         except TimeoutException as e:
-            raise TimeoutError(e, "scrapy-selenium : request timeout")
+            return IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
 
 
 
