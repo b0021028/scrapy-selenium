@@ -127,7 +127,7 @@ class SeleniumMiddleware:
         try:
             self.driver.get(request.url)
         except TimeoutException as e:
-            return IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
+            raise IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
 
 
 
