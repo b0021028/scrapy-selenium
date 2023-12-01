@@ -124,20 +124,28 @@ class SeleniumMiddleware:
             timeout = 30
         self.driver.set_page_load_timeout(timeout)
 
+
+
+        if hasattr(request.cookies, "__iter__"):
+            for cookie in request.cookies:
+                self.driver.add_cookie(
+                    cookie
+                )
+        else:
+            for cookie_name, cookie_value in request.cookies.items():
+                self.driver.add_cookie(
+                    {
+                        'name': cookie_name,
+                        'value': cookie_value
+                    }
+                )
+
+
         try:
             self.driver.get(request.url)
         except TimeoutException as e:
             raise IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
 
-
-
-        for cookie_name, cookie_value in request.cookies.items():
-            self.driver.add_cookie(
-                {
-                    'name': cookie_name,
-                    'value': cookie_value
-                }
-            )
 
         if(request.wait_until):
             WebDriverWait(self.driver, request.wait_time).until(
