@@ -126,25 +126,29 @@ class SeleniumMiddleware:
 
 
 
-        if hasattr(request.cookies, "__iter__"):
-            for cookie in request.cookies:
-                self.driver.add_cookie(
-                    cookie
-                )
-        else:
-            for cookie_name, cookie_value in request.cookies.items():
-                self.driver.add_cookie(
-                    {
-                        'name': cookie_name,
-                        'value': cookie_value
-                    }
-                )
-
-
         try:
             self.driver.get(request.url)
         except TimeoutException as e:
             raise IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
+
+        if request.cookies:
+            if hasattr(request.cookies, "__iter__"):
+                for cookie in request.cookies:
+                    self.driver.add_cookie(cookie)
+            else:
+                for cookie_name, cookie_value in request.cookies.items():
+                    self.driver.add_cookie(
+                        {
+                            'name': cookie_name,
+                            'value': cookie_value
+                        }
+                    )
+
+            try:
+                self.driver.get(request.url)
+            except TimeoutException as e:
+                raise IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
+
 
 
         if(request.wait_until):
