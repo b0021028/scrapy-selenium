@@ -132,6 +132,7 @@ class SeleniumMiddleware:
             raise IgnoreRequest(TimeoutError(e, "scrapy-selenium : request timeout"))
 
         if request.cookies:
+            self.driver.delete_all_cookies()
             if hasattr(request.cookies, "__iter__"):
                 for cookie in request.cookies:
                     self.driver.add_cookie(cookie)
